@@ -6,29 +6,29 @@ import: github.com/soulbalz/checkbodyplugin
 summary: Checks the incoming request for specific body and their values to be present and matching the configuration.
 
 testData:
+  response:
+    code: '1234'
+    message: 'test'
+    status: 401
   body:
-    - body:
-        name: "BODY_1"
-        matchtype: one
-        values: 
-          - "VALUE_1"
-          - "VALUE_99"
-    - body:
-        name: "BODY_2"
-        matchtype: one
-        values: 
-          - "VALUE_2"
-    - body:
-        name: "BODY_3"
-        matchtype: one
-        values: 
-          - "VALUE_3"
-        required: false
-    - body:
-        name: "BODY_4"
-        matchtype: all
-        values: 
-          - "LUE_4"
-          - "VALUE_5"
-        contains: true
-        required: true
+    - name: "BODY_1"
+      matchtype: one
+      values: 
+        - "VALUE_1"
+        - "VALUE_99"
+    - name: "BODY_2"
+      matchtype: one
+      values: 
+        - "VALUE_2"
+    - name: "BODY_3"
+      matchtype: one
+      values: 
+        - "VALUE_3"
+      required: false
+    - name: "BODY_4"
+      matchtype: all
+      values: 
+        - "VALUE_4"
+        - "VALUE_5"
+      contains: true
+      required: true

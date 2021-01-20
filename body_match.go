@@ -18,16 +18,25 @@ type SingleBody struct {
 	URLDecode *bool    `json:"urldecode,omitempty"`
 }
 
+//ResponseError contains a failuer message
+type ResponseError struct {
+	Code    string `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Status  int    `json:"status,omitempty"`
+}
+
 // Config the plugin configuration.
 type Config struct {
-	Body []SingleBody
+	Body     []SingleBody
+	Response ResponseError
 }
 
 // BodyMatch demonstrates a BodyMatch plugin.
 type BodyMatch struct {
-	next http.Handler
-	body []SingleBody
-	name string
+	name     string
+	next     http.Handler
+	body     []SingleBody
+	response ResponseError
 }
 
 // MatchType defines an enum which can be used to specify the match type for the 'contains' config.
@@ -43,14 +52,15 @@ const (
 // CreateConfig creates the default plugin configuration.
 func CreateConfig() *Config {
 	return &Config{
-		Body: []SingleBody{},
+		Body:     []SingleBody{},
+		Response: ResponseError{},
 	}
 }
 
 // New created a new BodyMatch plugin.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	if len(config.Body) == 0 {
-		return nil, fmt.Errorf("configuration incorrect, missing bodys")
+		return nil, fmt.Errorf("configuration incorrect, missing body")
 	}
 
 	for _, vBody := range config.Body {
@@ -77,10 +87,23 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 		}
 	}
 
+	if config.Response.Code == "" {
+		config.Response.Code = "1034"
+	}
+
+	if config.Response.Message == "" {
+		config.Response.Message = "Invalid request."
+	}
+
+	if config.Response.Status == 0 {
+		config.Response.Status = http.StatusBadRequest
+	}
+
 	return &BodyMatch{
-		body: config.Body,
-		next: next,
-		name: name,
+		name:     name,
+		next:     next,
+		body:     config.Body,
+		response: config.Response,
 	}, nil
 }
 
@@ -107,7 +130,15 @@ func (a *BodyMatch) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if bodyValid {
 		a.next.ServeHTTP(rw, req)
 	} else {
-		http.Error(rw, "Not allowed", http.StatusForbidden)
+		s := fmt.Sprintf(`{
+			"data": null,
+			"error": {
+				"code": "%s",
+				"message": "%s"
+			}
+		}`, a.response.Code, a.response.Message)
+
+		http.Error(rw, s, a.response.Status)
 	}
 }
 

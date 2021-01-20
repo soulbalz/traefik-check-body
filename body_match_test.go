@@ -45,7 +45,7 @@ func TestBodyNotMatch(t *testing.T) {
 		"test4": "correctvalue4"
 	}`)
 
-	executeTest(t, requestBody, http.StatusForbidden)
+	executeTest(t, requestBody, http.StatusBadRequest)
 }
 
 func TestBodyNotRequired(t *testing.T) {
