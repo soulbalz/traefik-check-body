@@ -23,20 +23,13 @@ type ResponseError struct {
 	Code    string `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
 	Status  int    `json:"status,omitempty"`
+	Raw     string `json:"raw,omitempty"`
 }
 
 // Config the plugin configuration.
 type Config struct {
 	Body     []SingleBody
 	Response ResponseError
-}
-
-// BodyMatch demonstrates a BodyMatch plugin.
-type BodyMatch struct {
-	name     string
-	next     http.Handler
-	body     []SingleBody
-	response ResponseError
 }
 
 // MatchType defines an enum which can be used to specify the match type for the 'contains' config.
@@ -52,13 +45,17 @@ const (
 // CreateConfig creates the default plugin configuration.
 func CreateConfig() *Config {
 	return &Config{
-		Body:     []SingleBody{},
-		Response: ResponseError{},
+		Body: []SingleBody{},
+		Response: ResponseError{
+			Code:    "400",
+			Message: "Invalid Request.",
+			Status:  http.StatusBadRequest,
+		},
 	}
 }
 
 // New created a new BodyMatch plugin.
-func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
+func New(ctx context.Context, next http.Handler, config *Config, _ string) (http.Handler, error) {
 	if len(config.Body) == 0 {
 		return nil, fmt.Errorf("configuration incorrect, missing body")
 	}
@@ -87,59 +84,61 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 		}
 	}
 
-	if config.Response.Code == "" {
-		config.Response.Code = "1034"
-	}
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		bodyValid := true
 
-	if config.Response.Message == "" {
-		config.Response.Message = "Invalid request."
-	}
+		var reqBody map[string]string
+		err := json.NewDecoder(r.Body).Decode(&reqBody)
 
-	if config.Response.Status == 0 {
-		config.Response.Status = http.StatusBadRequest
-	}
+		if err == nil {
+			for _, vBody := range config.Body {
+				reqBodyVal := reqBody[vBody.Name]
 
-	return &BodyMatch{
-		name:     name,
-		next:     next,
-		body:     config.Body,
-		response: config.Response,
-	}, nil
-}
+				if vBody.IsContains() && reqBodyVal != "" {
+					bodyValid = checkContains(&reqBodyVal, &vBody)
+				} else {
+					bodyValid = checkRequired(&reqBodyVal, &vBody)
+				}
 
-func (a *BodyMatch) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	bodyValid := true
-
-	var reqBody map[string]string
-	json.NewDecoder(req.Body).Decode(&reqBody)
-
-	for _, vBody := range a.body {
-		reqBodyVal := reqBody[vBody.Name]
-
-		if vBody.IsContains() && reqBodyVal != "" {
-			bodyValid = checkContains(&reqBodyVal, &vBody)
-		} else {
-			bodyValid = checkRequired(&reqBodyVal, &vBody)
-		}
-
-		if !bodyValid {
-			break
-		}
-	}
-
-	if bodyValid {
-		a.next.ServeHTTP(rw, req)
-	} else {
-		s := fmt.Sprintf(`{
-			"data": null,
-			"error": {
-				"code": "%s",
-				"message": "%s"
+				if !bodyValid {
+					break
+				}
 			}
-		}`, a.response.Code, a.response.Message)
+		} else {
+			r.ParseForm() // Parses the request body
+			for _, vBody := range config.Body {
+				reqBodyVal := r.Form.Get(vBody.Name)
+				if vBody.IsContains() && reqBodyVal != "" {
+					bodyValid = checkContains(&reqBodyVal, &vBody)
+				} else {
+					bodyValid = checkRequired(&reqBodyVal, &vBody)
+				}
 
-		http.Error(rw, s, a.response.Status)
-	}
+				if !bodyValid {
+					break
+				}
+			}
+		}
+
+		if bodyValid {
+			next.ServeHTTP(rw, r)
+		} else {
+			var s string
+			if config.Response.Raw == "" {
+				s = fmt.Sprintf(`{
+					"data": null,
+					"error": {
+						"code": "%s",
+						"message": "%s"
+					}
+				}`, config.Response.Code, config.Response.Message)
+			} else {
+				s = config.Response.Raw
+			}
+
+			http.Error(rw, s, config.Response.Status)
+		}
+	}), nil
 }
 
 func checkContains(requestValue *string, vBody *SingleBody) bool {
