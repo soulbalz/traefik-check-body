@@ -1,9 +1,12 @@
 package checkbodyplugin
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -87,8 +90,16 @@ func New(ctx context.Context, next http.Handler, config *Config, _ string) (http
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		bodyValid := true
 
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("Error reading body: %v", err)
+			http.Error(rw, config.Response.getMessage(), config.Response.Status)
+			return
+		}
+
 		var reqBody map[string]string
-		err := json.NewDecoder(r.Body).Decode(&reqBody)
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		err = json.NewDecoder(r.Body).Decode(&reqBody)
 
 		if err == nil {
 			for _, vBody := range config.Body {
@@ -105,7 +116,9 @@ func New(ctx context.Context, next http.Handler, config *Config, _ string) (http
 				}
 			}
 		} else {
+			r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 			r.ParseForm() // Parses the request body
+
 			for _, vBody := range config.Body {
 				reqBodyVal := r.Form.Get(vBody.Name)
 				if vBody.IsContains() && reqBodyVal != "" {
@@ -121,24 +134,29 @@ func New(ctx context.Context, next http.Handler, config *Config, _ string) (http
 		}
 
 		if bodyValid {
+			r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 			next.ServeHTTP(rw, r)
 		} else {
-			var s string
-			if config.Response.Raw == "" {
-				s = fmt.Sprintf(`{
-					"data": null,
-					"error": {
-						"code": "%s",
-						"message": "%s"
-					}
-				}`, config.Response.Code, config.Response.Message)
-			} else {
-				s = config.Response.Raw
-			}
-
-			http.Error(rw, s, config.Response.Status)
+			http.Error(rw, config.Response.getMessage(), config.Response.Status)
 		}
 	}), nil
+}
+
+//ResponseError get message
+func (re *ResponseError) getMessage() string {
+	var s string
+	if re.Raw == "" {
+		s = fmt.Sprintf(`{
+			"data": null,
+			"error": {
+				"code": "%s",
+				"message": "%s"
+			}
+		}`, re.Code, re.Message)
+	} else {
+		s = re.Raw
+	}
+	return s
 }
 
 func checkContains(requestValue *string, vBody *SingleBody) bool {
