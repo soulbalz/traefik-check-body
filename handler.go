@@ -2,7 +2,6 @@ package checkbodyplugin
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -36,7 +35,6 @@ func (a *BodyMatch) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(data.Values)
 	for _, vBody := range a.body {
 		isBodyValid = vBody.IsValid(data)
 		if !isBodyValid {
