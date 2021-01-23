@@ -1,8 +1,13 @@
 # Check Body Request
 
-This check body request plugin for [Traefik](https://github.com/traefik/traefik) which checks the incoming request for specific body and their values to be present and matching the configuration. If the request does not validate against the configured body, the middleware will return a 4000 Bad Request status code.
+This check body request plugin for [Traefik](https://github.com/traefik/traefik) which checks the incoming request for specific body and their values to be present and matching the configuration. If the request does not validate against the configured body, the middleware will return a 400 Bad Request status code.
 
+## Limitations
+#
 
+ - JSON request are not working and it's will be make your traefik crash (We are fixing)
+
+#
 ## Configuration
 
 ### Static
@@ -15,7 +20,7 @@ experimental:
   plugins:
     check-body:
       modulename: github.com/soulbalz/checkbodyplugin
-      version: v1.0.2
+      version: v1.0.5
 ```
 
 ### Dynamic configuration
@@ -45,6 +50,10 @@ http:
             code: '1234'
             message: 'test'
             status: 401
+            raw: |
+              {
+                "error": "example error"
+              }
           body:
             - name: "BODY_1"
               matchtype: one
@@ -74,13 +83,23 @@ http:
 
 Supported configurations per body
 
-| Setting   | Allowed values | Description |
-| :--       | :--            | :--         |
-| name      | string   | Name of the request body |
-| matchtype | one, all | Match on all values or one of the values specified. The value 'all' is only allowed in combination with the 'contains' setting.|
-| values    | []string | A list of allowed values which are matched against the request header value|
-| contains  | boolean  | If set to true (default false), the request is allowed if the request body value contains the value specified in the configuration |
-| required  | boolean  | If set to false (default true), the request is allowed if the body is absent or the value is empty|
+| Setting   | Allowed values    | Required    | Description |
+| :--       | :--               | :--         | :--         |
+| name      | string            | Yes        | Name of the request body |
+| matchtype | one, all          | Yes        | Match on all values or one of the values specified. The value 'all' is only allowed in combination with the 'contains' setting.|
+| values    | []string          | Yes        | A list of allowed values which are matched against the request header value|
+| contains  | boolean           | No        | If set to true (default false), the request is allowed if the request body value contains the value specified in the configuration |
+| required  | boolean           | No        | If set to false (default true), the request is allowed if the body is absent or the value is empty|
 
 #
 
+response
+
+| Setting   | Allowed values    | Required  | Description |
+| :--       | :--               | :--       | :--         |
+| code      | string            | No        | Response error message code (default: 400) |
+| message | string              | No        | Response error message (default: "Invalid Request.") |
+| status    | integer           | No        | Response error status code (default: 400) |
+| raw  | string                 | No        | Custom your response message whatever you want |
+
+#
