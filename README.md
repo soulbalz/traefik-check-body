@@ -18,8 +18,8 @@ pilot:
 
 experimental:
   plugins:
-    check-body:
-      modulename: github.com/soulbalz/checkbodyplugin
+    traefik-check-body:
+      modulename: github.com/soulbalz/traefik-check-body
       version: v1.0.5
 ```
 
@@ -34,7 +34,7 @@ http:
       entryPoints:
         - http
       middlewares:
-        - check-body
+        - traefik-check-body
 
   services:
    service-whoami:
@@ -43,9 +43,9 @@ http:
           - url: http://127.0.0.1:5000
   
   middlewares:
-    check-body:
+    traefik-check-body:
       plugin:
-        check-body:
+        traefik-check-body:
           response:
             code: '1234'
             message: 'test'
