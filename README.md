@@ -20,7 +20,7 @@ experimental:
   plugins:
     traefik-check-body:
       modulename: github.com/soulbalz/traefik-check-body
-      version: v1.0.5
+      version: v1.1.2
 ```
 
 ### Dynamic configuration
