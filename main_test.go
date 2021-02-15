@@ -1,4 +1,4 @@
-package checkbody_test
+package traefik_check_body_test
 
 import (
 	"bytes"
@@ -90,12 +90,13 @@ func executeTest(t *testing.T, requestBody []byte, expectedResultCode int) {
 	ctx := context.Background()
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {})
 
-	handler, err := checkbody.New(ctx, next, cfg, "check-body-plugin")
+	handler, err := checkbody.New(ctx, next, cfg, "traefik-check-body")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "http://localhost", bytes.NewBuffer(requestBody))
+	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		t.Fatal(err)
 	}

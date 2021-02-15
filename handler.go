@@ -1,4 +1,4 @@
-package checkbody
+package traefik_check_body
 
 import (
 	"bytes"

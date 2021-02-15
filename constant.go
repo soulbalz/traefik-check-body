@@ -1,4 +1,4 @@
-package checkbody
+package traefik_check_body
 
 // MatchType defines an enum which can be used to specify the match type for the 'contains' config.
 type MatchType string
