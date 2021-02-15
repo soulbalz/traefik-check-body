@@ -1,4 +1,4 @@
-package checkbodyplugin
+package checkbody
 
 import (
 	"bytes"

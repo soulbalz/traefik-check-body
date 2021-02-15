@@ -1,4 +1,4 @@
-package checkbodyplugin
+package checkbody
 
 import (
 	"context"

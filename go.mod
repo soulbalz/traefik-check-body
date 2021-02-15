@@ -1,4 +1,4 @@
-module github.com/soulbalz/checkbodyplugin
+module github.com/soulbalz/traefik-check-body
 
 go 1.15
 

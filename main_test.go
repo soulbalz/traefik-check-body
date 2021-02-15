@@ -1,4 +1,4 @@
-package checkbodyplugin_test
+package checkbody_test
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	checkbody "github.com/soulbalz/checkbodyplugin"
+	checkbody "github.com/soulbalz/traefik-check-body"
 )
 
 var required = true

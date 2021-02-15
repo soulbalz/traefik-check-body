@@ -1,7 +1,7 @@
 displayName: Check Body Request
 type: middleware
 
-import: github.com/soulbalz/checkbodyplugin
+import: github.com/soulbalz/traefik-check-body
 
 summary: Checks the incoming request for specific body and their values to be present and matching the configuration.
 
