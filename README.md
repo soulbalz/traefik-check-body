@@ -5,7 +5,7 @@ This check body request plugin for [Traefik](https://github.com/traefik/traefik)
 ## Limitations
 #
 
- - JSON request are not working and it's will be make your traefik crash (We are fixing)
+ - JSON request are not working and it's will be make your traefik crash on Traefik v2.4.5 and below
 
 #
 ## Configuration
